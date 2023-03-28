@@ -124,6 +124,8 @@ def sharpe_ratio(price_series, risk_free_rate, interval='d'):
     Returns:
         Sharpe ratio of returns.
 
+    Further reading:
+    https://abcportfela.pl/what-is-the-sharpe-ratio-and-how-is-it-used-to-measure-investment-risk/
     """
     interval = interval.lower()
     if interval == 'd':
@@ -141,8 +143,8 @@ def sharpe_ratio(price_series, risk_free_rate, interval='d'):
 
     returns = time_series_to_returns(price_series)
     excess_returns = returns - np.log(1 + (risk_free_rate[1:] / 100)) / 365
-    mean_excess_returns = np.mean(excess_returns)
-    std_excess_returns = np.std(excess_returns)
+    mean_excess_returns = np.mean(excess_returns) * n
+    std_excess_returns = np.std(excess_returns) * np.sqrt(n)
     sharpe_ratio_result = np.exp(mean_excess_returns / std_excess_returns) - 1
     return sharpe_ratio_result
 
@@ -165,9 +167,9 @@ def sortino_ratio(price_series, risk_free_rate, interval='d'):
     returns = time_series_to_returns(price_series)
     downside_returns = returns.copy()
     downside_returns[returns >= 0] = 0
-    downside_std = np.std(downside_returns)
+    downside_std = np.std(downside_returns) * np.sqrt(n)
     excess_returns = returns - np.log(1 + (risk_free_rate[1:] / 100)) / 365
-    mean_excess_returns = np.mean(excess_returns)
+    mean_excess_returns = np.mean(excess_returns) * n
     sortino_ratio_result = np.exp(mean_excess_returns / downside_std) - 1
     return sortino_ratio_result
 
@@ -208,7 +210,7 @@ def value_at_risk(price_series, confidence_level=0.95, nominal=1000, interval='d
 
 
 # Exemplary inputs
-time_series, risk_f_rate = get_data('3429.N')
+time_series, risk_f_rate = get_data('1623.N')
 
 mean_ret_risk = mean_return(time_series)
 max_dr_down = max_drawdown(time_series)
@@ -221,4 +223,3 @@ print("Maximum drawdown and length of drawdown:", max_dr_down)
 print("Współczynnik Sharpe'a wynosi:", sharpe_ratio_value)
 print("Sortino Ratio wynosi:", sortino_ratio_value)
 print("Value at risk wynosi:", v_at_r)
-
