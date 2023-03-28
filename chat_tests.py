@@ -221,3 +221,4 @@ print("Maximum drawdown and length of drawdown:", max_dr_down)
 print("Współczynnik Sharpe'a wynosi:", sharpe_ratio_value)
 print("Sortino Ratio wynosi:", sortino_ratio_value)
 print("Value at risk wynosi:", v_at_r)
+
