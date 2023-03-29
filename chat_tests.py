@@ -88,6 +88,7 @@ def mean_return(price_series, interval='d'):
         n = 1
     else:
         print('Please input correct interval: "d" or "w" or "m" or "y".')
+        n = 250
 
     returns = time_series_to_returns(price_series)
     mean_ret = np.mean(returns) * n
@@ -140,6 +141,7 @@ def sharpe_ratio(price_series, risk_free_rate, interval='d'):
         n = 1
     else:
         print('Please input correct interval: "d" or "w" or "m" or "y".')
+        n = 250
 
     returns = time_series_to_returns(price_series)
     excess_returns = returns - np.log(1 + (risk_free_rate[1:] / 100)) / 365
@@ -163,6 +165,7 @@ def sortino_ratio(price_series, risk_free_rate, interval='d'):
         n = 1
     else:
         print('Please input correct interval: "d" or "w" or "m" or "y".')
+        n = 250
 
     returns = time_series_to_returns(price_series)
     downside_returns = returns.copy()
@@ -200,6 +203,7 @@ def value_at_risk(price_series, confidence_level=0.95, nominal=1000, interval='d
         n = 1
     else:
         print('Please input correct interval: "d" or "w" or "m" or "y".')
+        n = 250
 
     # calculate value at risk given time series
     return_series = time_series_to_returns(price_series)
