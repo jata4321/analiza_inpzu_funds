@@ -9,7 +9,7 @@ from datetime import datetime
 x = 'd'
 
 
-def get_data(fund_ticker, rfr_ticker='PLOPLN6M', interval='d'):
+def get_data(fund_ticker, rfr_ticker='PLOPLN3M', interval='d'):
     """
 
     Args:
@@ -109,7 +109,7 @@ def max_drawdown(price_series):
     cum_max = np.maximum.accumulate(price_series)
     max_dur_dd = max(collections.Counter(cum_max).values())
     drawdown = (cum_max - price_series) / cum_max
-    max_dd = max(drawdown)
+    max_dd = -max(drawdown)
     return max_dur_dd, max_dd
 
 
@@ -138,11 +138,12 @@ def sharpe_ratio(price_series, risk_free_rate, interval='d'):
         n = 1
     else:
         print('Please input correct interval: "d" or "w" or "m" or "y".')
+        n = 250
 
     returns = time_series_to_returns(price_series)
     excess_returns = returns - np.log(1 + (risk_free_rate[1:] / 100)) / 365
-    mean_excess_returns = np.mean(excess_returns)
-    std_excess_returns = np.std(excess_returns)
+    mean_excess_returns = np.mean(excess_returns) * n
+    std_excess_returns = np.std(excess_returns) * np.sqrt(n)
     sharpe_ratio_result = np.exp(mean_excess_returns / std_excess_returns) - 1
     return sharpe_ratio_result
 
@@ -161,13 +162,14 @@ def sortino_ratio(price_series, risk_free_rate, interval='d'):
         n = 1
     else:
         print('Please input correct interval: "d" or "w" or "m" or "y".')
+        n = 250
 
     returns = time_series_to_returns(price_series)
     downside_returns = returns.copy()
     downside_returns[returns >= 0] = 0
-    downside_std = np.std(downside_returns)
+    downside_std = np.std(downside_returns) * np.sqrt(n)
     excess_returns = returns - np.log(1 + (risk_free_rate[1:] / 100)) / 365
-    mean_excess_returns = np.mean(excess_returns)
+    mean_excess_returns = np.mean(excess_returns) * n
     sortino_ratio_result = np.exp(mean_excess_returns / downside_std) - 1
     return sortino_ratio_result
 
@@ -204,20 +206,32 @@ def value_at_risk(price_series, confidence_level=0.95, nominal=1000, interval='d
     volatility = np.std(return_series) * np.sqrt(n)
     val_at_risk = volatility * t.ppf(1 - confidence_level, len(return_series) - 1)
     dollar_val_at_risk = nominal * val_at_risk
-    return val_at_risk, dollar_val_at_risk
+    wipeout = val_at_risk / (np.mean(return_series) * n)
+    return val_at_risk, dollar_val_at_risk, wipeout
 
 
 # Exemplary inputs
-time_series, risk_f_rate = get_data('3429.N')
+funds_dict = dict(in_ostr='1623.n', in_obl_pl='1624.n', in_obl_ry_ro='1625.n', in_obl_ry_ws='1643.n',
+                  in_obl_inf='1216.n', in_akc_pol='1621.n', in_akc_ry_ws='1378.n', in_akc_ry_ro='1622.n',
+                  in_akc_am='2824.n', in_akc_eu='2671.n', in_akc_ce='2701.n', in_akc_sn='1223.n', in_akc_si='1232.n',
+                  in_akc_sze='1222.n', in_akc_rz='1262.n', in_akc_rs='1334.n')
 
-mean_ret_risk = mean_return(time_series)
-max_dr_down = max_drawdown(time_series)
-sharpe_ratio_value = sharpe_ratio(time_series, risk_f_rate)
-sortino_ratio_value = sortino_ratio(time_series, risk_f_rate)
-v_at_r = value_at_risk(time_series, 0.95)
+for key, val in funds_dict.items():
 
-print("Mean return and risk:", mean_ret_risk)
-print("Maximum drawdown and length of drawdown:", max_dr_down)
-print("Współczynnik Sharpe'a wynosi:", sharpe_ratio_value)
-print("Sortino Ratio wynosi:", sortino_ratio_value)
-print("Value at risk wynosi:", v_at_r)
+    time_series, risk_f_rate = get_data(val)
+
+    mean_ret_risk = mean_return(time_series)
+    max_dr_down = max_drawdown(time_series)
+    sharpe_ratio_value = sharpe_ratio(time_series, risk_f_rate)
+    sortino_ratio_value = sortino_ratio(time_series, risk_f_rate)
+    v_at_r = value_at_risk(time_series, 0.95)
+
+    print('')
+    print(f'Name of the fund: {key}')
+    print(f'Code of the fund: {val}')
+    print("Mean return and risk:", mean_ret_risk)
+    print("Maximum length of drawdown and %-drawdown:", max_dr_down)
+    print("Współczynnik Sharpe'a wynosi:", sharpe_ratio_value)
+    print("Sortino Ratio wynosi:", sortino_ratio_value)
+    print("Value at risk roczne wynosi:", v_at_r)
+    print('-'*40)
