@@ -88,6 +88,7 @@ def mean_return(price_series, interval='d'):
         n = 1
     else:
         print('Please input correct interval: "d" or "w" or "m" or "y".')
+        n = 250
 
     returns = time_series_to_returns(price_series)
     mean_ret = np.mean(returns) * n
@@ -200,6 +201,7 @@ def value_at_risk(price_series, confidence_level=0.95, nominal=1000, interval='d
         n = 1
     else:
         print('Please input correct interval: "d" or "w" or "m" or "y".')
+        n = 250
 
     # calculate value at risk given time series
     return_series = time_series_to_returns(price_series)
@@ -217,7 +219,6 @@ funds_dict = dict(in_ostr='1623.n', in_obl_pl='1624.n', in_obl_ry_ro='1625.n', i
                   in_akc_sze='1222.n', in_akc_rz='1262.n', in_akc_rs='1334.n')
 
 for key, val in funds_dict.items():
-
     time_series, risk_f_rate = get_data(val)
 
     mean_ret_risk = mean_return(time_series)
@@ -234,4 +235,11 @@ for key, val in funds_dict.items():
     print("Współczynnik Sharpe'a wynosi:", sharpe_ratio_value)
     print("Sortino Ratio wynosi:", sortino_ratio_value)
     print("Value at risk roczne wynosi:", v_at_r)
-    print('-'*40)
+    print('-' * 40)
+
+'''
+You can add two more indicators:
+    1) provided investment horizon, what is expected return taking into wipeout period
+    2) how distressed the market is based on latest drawdown and normal distribution of returns for
+    particular fund. 
+'''
