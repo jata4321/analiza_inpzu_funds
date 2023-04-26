@@ -1,10 +1,14 @@
-import numpy as np
 import collections
-import pandas as pd
 import os
-from scipy.stats import t
-from urllib.request import urlretrieve
 from datetime import datetime
+from urllib.request import urlretrieve
+
+import dash_bootstrap_components as dbc
+import plotly.express as px
+import numpy as np
+import pandas as pd
+from dash import Dash, dcc, html, dash_table
+from scipy.stats import t
 
 x = 'd'
 
@@ -21,8 +25,8 @@ def get_data(fund_ticker, rfr_ticker='PLOPLN3M', interval='d'):
 
     x = str(interval)
 
-    fund_csv_file = str(fund_ticker) + '_' + x + '.csv'
-    rfr_csv_file = str(rfr_ticker) + '_' + x + '.csv'
+    fund_csv_file = './data/' + str(fund_ticker) + '_' + x + '.csv'
+    rfr_csv_file = './data/' + str(rfr_ticker) + '_' + x + '.csv'
 
     if os.path.exists(fund_csv_file):
         ctime = os.path.getmtime(fund_csv_file)
@@ -91,9 +95,9 @@ def mean_return(price_series, interval='d'):
         n = 250
 
     returns = time_series_to_returns(price_series)
-    mean_ret = np.mean(returns) * n
+    mean_returns = np.mean(returns) * n
     risk = np.std(returns) * np.sqrt(n)
-    return mean_ret, risk
+    return mean_returns, risk
 
 
 def max_drawdown(price_series):
@@ -208,34 +212,65 @@ def value_at_risk(price_series, confidence_level=0.95, nominal=1000, interval='d
     volatility = np.std(return_series) * np.sqrt(n)
     val_at_risk = volatility * t.ppf(1 - confidence_level, len(return_series) - 1)
     dollar_val_at_risk = nominal * val_at_risk
-    wipeout = val_at_risk / (np.mean(return_series) * n)
+    wipeout = abs(val_at_risk / (np.mean(return_series) * n))
     return val_at_risk, dollar_val_at_risk, wipeout
 
 
-# Exemplary inputs
+# Dictionary of inputs
 funds_dict = dict(in_ostr='1623.n', in_obl_pl='1624.n', in_obl_ry_ro='1625.n', in_obl_ry_ws='1643.n',
                   in_obl_inf='1216.n', in_akc_pol='1621.n', in_akc_ry_ws='1378.n', in_akc_ry_ro='1622.n',
                   in_akc_am='2824.n', in_akc_eu='2671.n', in_akc_ce='2701.n', in_akc_sn='1223.n', in_akc_si='1232.n',
                   in_akc_sze='1222.n', in_akc_rz='1262.n', in_akc_rs='1334.n')
+name = []
+mean_ret = []
+mean_risk = []
+drawdown_dur = []
+drawdown_depth = []
+sharpe = []
+sortino = []
+value_risk = []
+wipe = []
 
 for key, val in funds_dict.items():
     time_series, risk_f_rate = get_data(val)
 
     mean_ret_risk = mean_return(time_series)
-    max_dr_down = max_drawdown(time_series)
+    max_draw_down = max_drawdown(time_series)
     sharpe_ratio_value = sharpe_ratio(time_series, risk_f_rate)
     sortino_ratio_value = sortino_ratio(time_series, risk_f_rate)
     v_at_r = value_at_risk(time_series, 0.95)
 
+    name.append(key)
+    mean_ret.append(mean_ret_risk[0])
+    mean_risk.append(mean_ret_risk[1])
+    drawdown_dur.append(max_draw_down[0])
+    drawdown_depth.append(max_draw_down[1])
+    sharpe.append(sharpe_ratio_value)
+    sortino.append(sortino_ratio_value)
+    value_risk.append(v_at_r[0])
+    wipe.append(v_at_r[2])
+
+dff = pd.DataFrame({'Name': name,
+                    'Return': mean_ret,
+                    'Risk': mean_risk,
+                    'Drawdown_Duration': drawdown_dur,
+                    'Drawdown_Depth': drawdown_depth,
+                    'Sharpe': sharpe,
+                    'Sortino': sortino,
+                    'VaR': value_risk,
+                    'Wipeout': wipe
+                    })
+'''    
     print('')
     print(f'Name of the fund: {key}')
     print(f'Code of the fund: {val}')
     print("Mean return and risk:", mean_ret_risk)
-    print("Maximum length of drawdown and %-drawdown:", max_dr_down)
+    print("Maximum length of drawdown and %-drawdown:", max_draw_down)
     print("Współczynnik Sharpe'a wynosi:", sharpe_ratio_value)
     print("Sortino Ratio wynosi:", sortino_ratio_value)
     print("Value at risk roczne wynosi:", v_at_r)
     print('-' * 40)
+'''
 
 '''
 You can add two more indicators:
@@ -243,3 +278,28 @@ You can add two more indicators:
     2) how distressed the market is based on latest drawdown and normal distribution of returns for
     particular fund. 
 '''
+
+app = Dash(__name__, external_stylesheets=[dbc.themes.GRID])
+
+app.layout = html.Div([
+    dbc.Row([
+        html.H1('Hello World!')
+    ]),
+    dbc.Row([
+        dbc.Col([dcc.Dropdown(options=dff.columns,
+                              value=dff.columns[0]),
+                 html.Br(),
+                 dcc.Dropdown(options=dff.columns,
+                              value=dff.columns[1])],
+                width=2),
+        dbc.Col(dcc.Graph(id='Scatter-plot',
+                          figure=px.scatter(dff, x='Risk', y='Return',
+                                            hover_name=dff.Name),
+                          ), width=8),
+        dbc.Col(dash_table.DataTable(dff.to_dict('records'),
+                                     columns=[{'format': {'locale': {'decimal': '.2'}}}]))
+    ])
+])
+
+if __name__ == '__main__':
+    app.run(debug=True)
