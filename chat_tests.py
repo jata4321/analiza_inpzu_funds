@@ -221,7 +221,7 @@ funds_dict = dict(in_ostr='1623.n', in_obl_pl='1624.n', in_obl_ry_ro='1625.n', i
                   in_obl_inf='1216.n', in_akc_pol='1621.n', in_akc_ry_ws='1378.n', in_akc_ry_ro='1622.n',
                   in_akc_am='2824.n', in_akc_eu='2671.n', in_akc_ce='2701.n', in_akc_sn='1223.n', in_akc_si='1232.n',
                   in_akc_sze='1222.n', in_akc_rz='1262.n', in_akc_rs='1334.n', TBSP='^TBSP', ETFSP500='ETFSP500.PL',
-                  WIG='WIG')
+                  ETFSDAX='ETFDAX.PL', WIG='WIG')
 name = []
 mean_ret = []
 mean_risk = []
@@ -262,7 +262,7 @@ dff = pd.DataFrame({'Name': name,
                     'Wipeout': wipe
                     })
 
-dff.sort_values(by=['Return'], inplace=True)
+# dff.sort_values(by=['Return'], inplace=True)
 
 '''
 You can add two more indicators:
@@ -283,7 +283,8 @@ app.layout = html.Div([
                               value=dff.columns[1]),
                  dcc.Dropdown(id='x-select',
                               options=dff.columns,
-                              value=dff.columns[2])], width=2),
+                              value=dff.columns[2]),
+                 dcc.RadioItems(['All returns','Positive returns only'])], width=2),
         dbc.Col(dcc.Graph(id='scatter-plot', figure={}), width=8),
         dbc.Col(html.P(id='click-output'))
         # dbc.Col(dash_table.DataTable(dff.to_dict('records'),
@@ -300,9 +301,8 @@ app.layout = html.Div([
     Input('scatter-plot', 'clickData')
 )
 def figure_plot(y_select, x_select, clicked):
-    figure = px.scatter(dff, x=x_select, y=y_select, hover_name=dff['Name'])
+    figure = px.scatter(dff, x=x_select, y=y_select, trendline="ols", hover_name=dff['Name'], height=700)
     if clicked is None:
-        # point_clicked = []
         fund_info = ''
     else:
         point_clicked = clicked['points'][0]['pointNumber']
