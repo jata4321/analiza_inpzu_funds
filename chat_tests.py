@@ -7,7 +7,7 @@ import dash_bootstrap_components as dbc
 import plotly.express as px
 import numpy as np
 import pandas as pd
-from dash import Dash, dcc, html, dash_table
+from dash import Dash, dcc, html, dash_table, Input, Output
 from scipy.stats import t
 
 x = 'd'
@@ -220,7 +220,8 @@ def value_at_risk(price_series, confidence_level=0.95, nominal=1000, interval='d
 funds_dict = dict(in_ostr='1623.n', in_obl_pl='1624.n', in_obl_ry_ro='1625.n', in_obl_ry_ws='1643.n',
                   in_obl_inf='1216.n', in_akc_pol='1621.n', in_akc_ry_ws='1378.n', in_akc_ry_ro='1622.n',
                   in_akc_am='2824.n', in_akc_eu='2671.n', in_akc_ce='2701.n', in_akc_sn='1223.n', in_akc_si='1232.n',
-                  in_akc_sze='1222.n', in_akc_rz='1262.n', in_akc_rs='1334.n')
+                  in_akc_sze='1222.n', in_akc_rz='1262.n', in_akc_rs='1334.n', TBSP='^TBSP', ETFSP500='ETFSP500.PL',
+                  WIG='WIG')
 name = []
 mean_ret = []
 mean_risk = []
@@ -260,17 +261,8 @@ dff = pd.DataFrame({'Name': name,
                     'VaR': value_risk,
                     'Wipeout': wipe
                     })
-'''    
-    print('')
-    print(f'Name of the fund: {key}')
-    print(f'Code of the fund: {val}')
-    print("Mean return and risk:", mean_ret_risk)
-    print("Maximum length of drawdown and %-drawdown:", max_draw_down)
-    print("Współczynnik Sharpe'a wynosi:", sharpe_ratio_value)
-    print("Sortino Ratio wynosi:", sortino_ratio_value)
-    print("Value at risk roczne wynosi:", v_at_r)
-    print('-' * 40)
-'''
+
+dff.sort_values(by=['Return'], inplace=True)
 
 '''
 You can add two more indicators:
@@ -283,23 +275,41 @@ app = Dash(__name__, external_stylesheets=[dbc.themes.GRID])
 
 app.layout = html.Div([
     dbc.Row([
-        html.H1('Hello World!')
+        html.H1('Risk & Return for inPZU Funds!', style={'textAlign': 'center'})
     ]),
     dbc.Row([
-        dbc.Col([dcc.Dropdown(options=dff.columns,
-                              value=dff.columns[0]),
-                 html.Br(),
-                 dcc.Dropdown(options=dff.columns,
-                              value=dff.columns[1])],
-                width=2),
-        dbc.Col(dcc.Graph(id='Scatter-plot',
-                          figure=px.scatter(dff, x='Risk', y='Return',
-                                            hover_name=dff.Name),
-                          ), width=8),
-        dbc.Col(dash_table.DataTable(dff.to_dict('records'),
-                                     columns=[{'format': {'locale': {'decimal': '.2'}}}]))
+        dbc.Col([dcc.Dropdown(id='y-select',
+                              options=dff.columns,
+                              value=dff.columns[1]),
+                 dcc.Dropdown(id='x-select',
+                              options=dff.columns,
+                              value=dff.columns[2])], width=2),
+        dbc.Col(dcc.Graph(id='scatter-plot', figure={}), width=8),
+        dbc.Col(html.P(id='click-output'))
+        # dbc.Col(dash_table.DataTable(dff.to_dict('records'),
+        #                              columns=[{'format': {'locale': {'decimal': '.2'}}}]))
     ])
 ])
+
+
+@app.callback(
+    Output('scatter-plot', 'figure'),
+    Output('click-output', 'children'),
+    Input('y-select', 'value'),
+    Input('x-select', 'value'),
+    Input('scatter-plot', 'clickData')
+)
+def figure_plot(y_select, x_select, clicked):
+    figure = px.scatter(dff, x=x_select, y=y_select, hover_name=dff['Name'])
+    if clicked is None:
+        # point_clicked = []
+        fund_info = ''
+    else:
+        point_clicked = clicked['points'][0]['pointNumber']
+        fund_info = dff.loc[point_clicked]
+
+    return figure, str(fund_info)
+
 
 if __name__ == '__main__':
     app.run(debug=True)
