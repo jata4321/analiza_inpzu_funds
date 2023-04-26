@@ -284,7 +284,7 @@ app.layout = html.Div([
                  dcc.Dropdown(id='x-select',
                               options=dff.columns,
                               value=dff.columns[2]),
-                 dcc.RadioItems(['All returns','Positive returns only'])], width=2),
+                 dcc.RadioItems(['All returns','Positive returns only'], value='All returns')], width=2),
         dbc.Col(dcc.Graph(id='scatter-plot', figure={}), width=8),
         dbc.Col(html.P(id='click-output'))
         # dbc.Col(dash_table.DataTable(dff.to_dict('records'),
