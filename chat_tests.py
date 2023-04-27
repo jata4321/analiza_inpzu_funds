@@ -284,7 +284,9 @@ app.layout = html.Div([
                  dcc.Dropdown(id='x-select',
                               options=dff.columns,
                               value=dff.columns[2]),
-                 dcc.RadioItems(['All returns','Positive returns only'], value='All returns')], width=2),
+                 dcc.RadioItems(id='return-select',
+                                options=['All returns', 'Positive returns only'],
+                                value='All returns')], width=2),
         dbc.Col(dcc.Graph(id='scatter-plot', figure={}), width=8),
         dbc.Col(html.P(id='click-output'))
         # dbc.Col(dash_table.DataTable(dff.to_dict('records'),
@@ -298,10 +300,16 @@ app.layout = html.Div([
     Output('click-output', 'children'),
     Input('y-select', 'value'),
     Input('x-select', 'value'),
-    Input('scatter-plot', 'clickData')
+    Input('return-select', 'value'),
+    Input('scatter-plot', 'clickData'),
 )
-def figure_plot(y_select, x_select, clicked):
-    figure = px.scatter(dff, x=x_select, y=y_select, trendline="ols", hover_name=dff['Name'], height=700)
+def figure_plot(y_select, x_select, return_select, clicked):
+    if return_select == 'Positive returns only':
+        filter_dff = dff['Return'] >= 0
+        df = dff[filter_dff]
+    else:
+        df = dff.copy()
+    figure = px.scatter(df, x=x_select, y=y_select, trendline="ols", hover_name=df['Name'], height=600)
     if clicked is None:
         fund_info = ''
     else:
