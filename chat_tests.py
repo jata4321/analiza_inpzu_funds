@@ -314,14 +314,29 @@ def figure_plot(y_select, x_select, return_select, clicked):
         df = dff[filter_dff].copy()
     else:
         df = dff.copy()
-    figure = px.scatter(df, x=x_select, y=y_select, trendline="ols", hover_name=df['Name'], height=600)
+    if x_select == 'Name' or y_select == 'Name':
+        if x_select != 'Name':
+            df_s = df.sort_values(x_select)
+        elif y_select != 'Name':
+            df_s = df.sort_values(y_select)
+        else:
+            df_s = df.sort_values('Return')
+
+        figure = px.scatter(df_s, x=x_select, y=y_select, hover_name='Name', height=600)
+    else:
+        df_s = df.copy()
+        figure = px.scatter(df_s, x=x_select, y=y_select, trendline="ols", hover_name='Name', height=600)
+
     if clicked is None:
         fund_info = []
     else:
-        point_clicked = clicked['points'][0]['pointNumber']
-        fdf = pd.DataFrame(df.iloc[point_clicked]).reset_index()
-        fdf.columns = (['Description', 'Value'])
-        fund_info = fdf.to_dict('records')
+        try:
+            point_clicked = clicked['points'][0]['pointNumber']
+            fdf = pd.DataFrame(df_s.iloc[point_clicked]).reset_index()
+            fdf.columns = (['Description', 'Value'])
+            fund_info = fdf.to_dict('records')
+        except IndexError as ie:
+            fund_info = []
     return figure, fund_info
 
 
