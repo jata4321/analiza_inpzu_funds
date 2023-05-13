@@ -275,27 +275,29 @@ app = Dash(__name__, external_stylesheets=[dbc.themes.GRID])
 
 app.layout = html.Div([
     dbc.Row([
-        html.H1('Risk & Return for inPZU Funds!', style={'textAlign': 'center'})
+        html.H1('Risk & Return Analysis for inPZU')
     ]),
     dbc.Row([
-        dbc.Col([dcc.Dropdown(id='y-select',
-                              options=dff.columns,
-                              value=dff.columns[1]),
-                 dcc.Dropdown(id='x-select',
-                              options=dff.columns,
-                              value=dff.columns[2]),
-                 dcc.RadioItems(id='return-select',
-                                options=['All returns', 'Positive returns only'],
-                                value='All returns')], width=2),
-        dbc.Col(dcc.Graph(id='scatter-plot', figure={}), width=7),
-        dbc.Col(dash_table.DataTable(id='info-table',
-                                     style_cell={'minWidth': 5,
-                                                 'maxWidth': 11,
-                                                 'textAlign': 'right',
-                                                 'fontSize': 14,
-                                                 'padding': 5},
-                                     style_data={'format': '.2f'}
-                                     ), width=3)
+        dbc.Col([html.P([dcc.Dropdown(id='y-select',
+                                      options=dff.columns,
+                                      value=dff.columns[1]),
+                         dcc.Dropdown(id='x-select',
+                                      options=dff.columns,
+                                      value=dff.columns[2])]),
+                 html.P([dcc.RadioItems(id='return-select',
+                                        options=['All returns', 'Positive returns only'],
+                                        value='All returns')]),
+                 html.P(
+                     dash_table.DataTable(id='info-table',
+                                          style_cell={'minWidth': 2,
+                                                      'maxWidth': 2,
+                                                      'textAlign': 'right',
+                                                      'fontSize': 13,
+                                                      'padding': 5},
+                                          style_data={'format': '.2f'}
+                                          ))
+                 ], width=3),
+        dbc.Col(dcc.Graph(id='scatter-plot', figure={}), width=9),
     ])
 ])
 
@@ -309,6 +311,7 @@ app.layout = html.Div([
     Input('scatter-plot', 'clickData'),
 )
 def figure_plot(y_select, x_select, return_select, clicked):
+    colors_map = px.colors.qualitative.Set1
     if return_select == 'Positive returns only':
         filter_dff = dff['Return'] >= 0
         df = dff[filter_dff].copy()
@@ -322,10 +325,12 @@ def figure_plot(y_select, x_select, return_select, clicked):
         else:
             df_s = df.sort_values('Return')
 
-        figure = px.scatter(df_s, x=x_select, y=y_select, hover_name='Name', height=600)
+        figure = px.scatter(df_s, x=x_select, y=y_select, hover_name='Name', height=500,
+                            color_discrete_sequence=colors_map)
     else:
         df_s = df.copy()
-        figure = px.scatter(df_s, x=x_select, y=y_select, trendline="ols", hover_name='Name', height=600)
+        figure = px.scatter(df_s, x=x_select, y=y_select, trendline="ols", hover_name='Name',
+                            height=500, color_discrete_sequence=colors_map)
 
     if clicked is None:
         fund_info = []
